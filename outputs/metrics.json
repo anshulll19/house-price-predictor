@@ -1,0 +1,20 @@
+{
+  "best_model": "XGBoost",
+  "metrics": {
+    "Linear Regression (Ridge)": {
+      "RMSE": 3062481.71,
+      "MAE": 2139785.78,
+      "R2": 0.8948
+    },
+    "Random Forest": {
+      "RMSE": 729304.82,
+      "MAE": 474422.98,
+      "R2": 0.994
+    },
+    "XGBoost": {
+      "RMSE": 429515.98,
+      "MAE": 285834.88,
+      "R2": 0.9979
+    }
+  }
+}

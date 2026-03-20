@@ -1,0 +1,46 @@
+{
+  "Ahmedabad": {
+    "median_price_per_sqft": 5459.0,
+    "count": 405
+  },
+  "Bangalore": {
+    "median_price_per_sqft": 10332.0,
+    "count": 1209
+  },
+  "Chennai": {
+    "median_price_per_sqft": 7705.0,
+    "count": 651
+  },
+  "Delhi": {
+    "median_price_per_sqft": 13120.0,
+    "count": 1273
+  },
+  "Hyderabad": {
+    "median_price_per_sqft": 8190.0,
+    "count": 965
+  },
+  "Jaipur": {
+    "median_price_per_sqft": 4975.0,
+    "count": 216
+  },
+  "Kolkata": {
+    "median_price_per_sqft": 6011.0,
+    "count": 559
+  },
+  "Mumbai": {
+    "median_price_per_sqft": 19640.0,
+    "count": 1446
+  },
+  "Noida": {
+    "median_price_per_sqft": 6622.0,
+    "count": 485
+  },
+  "Pune": {
+    "median_price_per_sqft": 7830.0,
+    "count": 746
+  },
+  "_overall_median": {
+    "median_price_per_sqft": 9161.040148239654,
+    "count": 7955
+  }
+}
