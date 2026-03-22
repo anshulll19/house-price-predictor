@@ -857,8 +857,13 @@ def tab_model_performance(metrics):
             for n,m in metrics["metrics"].items()]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     comp = ROOT/"outputs"/"model_comparison.png"
+    # if comp.exists():
+    #     # st.image(str(comp), use_container_width=True)
+    #     st.pyplot(comp)
     if comp.exists():
         st.image(str(comp), use_container_width=True)
+    else:
+        st.info("Run `python src/train.py` to generate the model comparison chart.")
 
 
 def tab_market_explorer(df):
