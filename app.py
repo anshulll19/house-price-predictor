@@ -17,6 +17,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.feature_engineering import engineer_features, CITY_TIER_MAP
+from src.database import init_db
+from src.auth import (
+    register_user, login_user, logout_user,
+    is_authenticated, get_current_user, _set_session,
+)
 
 st.set_page_config(
     page_title="House Price Estimator",
@@ -566,6 +571,91 @@ div[data-testid="stDataFrame"] {
     border-radius: 10px; overflow: hidden;
     border: 1px solid rgba(99,102,241,0.2) !important;
 }
+
+/* ── Auth page ── */
+.auth-wrap {
+    max-width: 460px;
+    margin: 80px auto 0 auto;
+}
+.auth-card {
+    background: rgba(15,23,42,0.75);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 20px;
+    padding: 40px 36px 36px 36px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeSlideDown 0.6s ease both;
+}
+.auth-card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+.auth-logo {
+    font-size: 2.8rem;
+    text-align: center;
+    margin-bottom: 4px;
+}
+.auth-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+}
+.auth-sub {
+    font-size: 0.78rem;
+    color: #475569;
+    text-align: center;
+    margin-bottom: 28px;
+    font-family: 'Inter', sans-serif;
+}
+/* Style text inputs inside auth card */
+div[data-testid="stTextInput"] input {
+    background: rgba(15,23,42,0.8) !important;
+    border: 1px solid rgba(99,102,241,0.3) !important;
+    border-radius: 10px !important;
+    color: #e2e8f0 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+}
+div[data-testid="stTextInput"] input:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+    outline: none !important;
+}
+div[data-testid="stTextInput"] label {
+    color: #64748b !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+/* Sidebar user card */
+.sb-user-card {
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+}
+.sb-user-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 3px;
+}
+.sb-user-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: #475569;
+}
 </style>
 """
 
@@ -621,6 +711,27 @@ def inject_css():
 
 def render_sidebar(city, loc, area, bhk, baths, age, t_fl, floor, furn, park, lift, east):
     with st.sidebar:
+        # ── Logged-in user card ────────────────────────────────────────────
+        user = get_current_user()
+        if user:
+            last_login = user.get("last_login")
+            if last_login and hasattr(last_login, "strftime"):
+                ll_str = last_login.strftime("%d %b %Y, %H:%M UTC")
+            else:
+                ll_str = "This session"
+            st.markdown(
+                f'<div class="sb-user-card">'
+                f'<div class="sb-user-name">👤 {user["username"]}</div>'
+                f'<div class="sb-user-meta">Last login: {ll_str}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+                logout_user()
+                st.rerun()
+            st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+        # ── Live input summary ────────────────────────────────────────────
         st.markdown('<div class="sidebar-title">📊 Live Input Summary</div>', unsafe_allow_html=True)
         rows = [
             ("City", city), ("Locality", loc), ("Area", f"{area:,} sqft"),
@@ -945,7 +1056,81 @@ def tab_market_explorer(df):
     st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
 
+def render_auth_page():
+    """Render the login / register landing page."""
+    inject_css()
+
+    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="auth-card">'
+        '<div class="auth-logo">🏠</div>'
+        '<div class="auth-title">House Price Estimator</div>'
+        '<div class="auth-sub">AI-powered property valuation · Sign in to continue</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Render inside an actual container so Streamlit widgets work
+    with st.container():
+        st.markdown(
+            '<div style="background:rgba(15,23,42,0.75);backdrop-filter:blur(28px);'
+            'border:1px solid rgba(99,102,241,0.3);border-radius:20px;'
+            'padding:36px;margin-top:-8px;position:relative;">',
+            unsafe_allow_html=True,
+        )
+        login_tab, register_tab = st.tabs(["🔑  Login", "✨  Register"])
+
+        # ── Login ───────────────────────────────────────────────────────────
+        with login_tab:
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            l_email = st.text_input("Email", key="l_email", placeholder="you@example.com")
+            l_pass  = st.text_input("Password", type="password", key="l_pass", placeholder="••••••••")
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+            if st.button("Sign In", key="login_btn", use_container_width=True):
+                if not l_email or not l_pass:
+                    st.error("Please fill in all fields.")
+                else:
+                    with st.spinner("Authenticating..."):
+                        ok, result = login_user(l_email, l_pass)
+                    if ok:
+                        _set_session(result)
+                        st.rerun()
+                    else:
+                        st.error(result)
+
+        # ── Register ────────────────────────────────────────────────────────
+        with register_tab:
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            r_user    = st.text_input("Username",         key="r_user",    placeholder="johndoe")
+            r_email   = st.text_input("Email",            key="r_email",   placeholder="you@example.com")
+            r_pass    = st.text_input("Password",         type="password", key="r_pass",  placeholder="Min 8 chars, letters + digits")
+            r_confirm = st.text_input("Confirm Password", type="password", key="r_confirm", placeholder="Repeat password")
+            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+            if st.button("Create Account", key="register_btn", use_container_width=True):
+                with st.spinner("Creating account..."):
+                    ok, msg = register_user(r_user, r_email, r_pass, r_confirm)
+                if ok:
+                    st.success("✅ Account created! Switch to Login to sign in.")
+                else:
+                    st.error(msg)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def main():
+    # Initialise DB (creates table if needed) — runs once per process
+    try:
+        init_db()
+    except Exception as e:
+        st.error(f"⚠️ Database connection failed: {e}")
+        st.stop()
+
+    # ── Auth gate ──────────────────────────────────────────────────────────
+    if not is_authenticated():
+        render_auth_page()
+        st.stop()
+
     inject_css()
 
     model      = load_model()
