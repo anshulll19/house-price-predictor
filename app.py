@@ -13,6 +13,8 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import joblib
+import numpy as np
+import matplotlib.pyplot as plt
 
 from src.feature_engineering import engineer_features, CITY_TIER_MAP
 
@@ -831,40 +833,53 @@ def tab_value_drivers(inp):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def tab_model_performance(metrics):
-    st.markdown('<div class="chart-title">Model Evaluation</div>', unsafe_allow_html=True)
-    st.markdown('<div class="chart-desc">Metrics evaluated on a held-out 20% test set not seen during training.</div>', unsafe_allow_html=True)
-    if not metrics:
-        st.caption("Run `python src/train.py` to generate metrics.")
-        return
-    best = metrics["best_model"]
-    bm   = metrics["metrics"][best]
-    c1, c2, c3 = st.columns(3)
-    for col, lbl, val, sub in [
-        (c1,"RMSE",fmt_inr(bm["RMSE"]),"Root mean square error"),
-        (c2,"MAE", fmt_inr(bm["MAE"]), "Mean absolute error"),
-        (c3,"R²",  f"{bm['R2']:.4f}",  "Coefficient of determination"),
-    ]:
-        col.markdown(
-            f"<div class='perf-tile'>"
-            f"<div class='perf-lbl'>{lbl}</div>"
-            f"<div class='perf-val'>{val}</div>"
-            f"<div class='perf-sub'>{sub}</div>"
-            f"</div>", unsafe_allow_html=True)
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-    rows = [{"Model":n,"RMSE":fmt_inr(m["RMSE"]),"MAE":fmt_inr(m["MAE"]),
-             "R²":f"{m['R2']:.4f}","Best":"★" if n==best else ""}
-            for n,m in metrics["metrics"].items()]
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    comp = ROOT/"outputs"/"model_comparison.png"
-    # if comp.exists():
-    #     # st.image(str(comp), use_container_width=True)
-    #     st.pyplot(comp)
-    if comp.exists():
-        st.image(str(comp), use_container_width=True)
-    else:
-        st.info("Run `python src/train.py` to generate the model comparison chart.")
+# def tab_model_performance(metrics):
+#     st.markdown('<div class="chart-title">Model Evaluation</div>', unsafe_allow_html=True)
+#     st.markdown('<div class="chart-desc">Metrics evaluated on a held-out 20% test set not seen during training.</div>', unsafe_allow_html=True)
+#     if not metrics:
+#         st.caption("Run `python src/train.py` to generate metrics.")
+#         return
+#     best = metrics["best_model"]
+#     bm   = metrics["metrics"][best]
+#     c1, c2, c3 = st.columns(3)
+#     for col, lbl, val, sub in [
+#         (c1,"RMSE",fmt_inr(bm["RMSE"]),"Root mean square error"),
+#         (c2,"MAE", fmt_inr(bm["MAE"]), "Mean absolute error"),
+#         (c3,"R²",  f"{bm['R2']:.4f}",  "Coefficient of determination"),
+#     ]:
+#         col.markdown(
+#             f"<div class='perf-tile'>"
+#             f"<div class='perf-lbl'>{lbl}</div>"
+#             f"<div class='perf-val'>{val}</div>"
+#             f"<div class='perf-sub'>{sub}</div>"
+#             f"</div>", unsafe_allow_html=True)
+#     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+#     rows = [{"Model":n,"RMSE":fmt_inr(m["RMSE"]),"MAE":fmt_inr(m["MAE"]),
+#              "R²":f"{m['R2']:.4f}","Best":"★" if n==best else ""}
+#             for n,m in metrics["metrics"].items()]
+#     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+#     comp = ROOT/"outputs"/"model_comparison.png"
+#     # if comp.exists():
+#     #     # st.image(str(comp), use_container_width=True)
+#     #     st.pyplot(comp)
+#     if comp.exists():
+#         st.image(str(comp), use_container_width=True)
+#     else:
+#         st.info("Run `python src/train.py` to generate the model comparison chart.")
 
+models = list(metrics["metrics"].keys())
+rmse_vals = [metrics["metrics"][m]["RMSE"] for m in models]
+mae_vals  = [metrics["metrics"][m]["MAE"]  for m in models]
+r2_vals   = [metrics["metrics"][m]["R2"]   for m in models]
+
+x = np.arange(len(models))
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+axes[0].bar(x, rmse_vals); axes[0].set_title("RMSE"); axes[0].set_xticks(x); axes[0].set_xticklabels(models, rotation=15)
+axes[1].bar(x, mae_vals);  axes[1].set_title("MAE");  axes[1].set_xticks(x); axes[1].set_xticklabels(models, rotation=15)
+axes[2].bar(x, r2_vals);   axes[2].set_title("R²");   axes[2].set_xticks(x); axes[2].set_xticklabels(models, rotation=15)
+plt.tight_layout()
+st.pyplot(fig)
+plt.close(fig)
 
 def tab_market_explorer(df):
     st.markdown('<div class="chart-title">Price vs Area</div>', unsafe_allow_html=True)
