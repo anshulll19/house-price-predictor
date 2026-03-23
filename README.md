@@ -153,7 +153,7 @@ CREATE TABLE predictions (
 ## ☁️ Deploying to Streamlit Cloud
 
 1. Push repo to GitHub
-2. Connect to [share.streamlit.io](https://share.streamlit.io)
+2. Connect to [Live Demo: https://house-price-predictor-g9knurrqope3nuekhrraep.streamlit.app]
 3. Set `Main file path` → `app.py`
 4. Add `database.url` under **Secrets** in the dashboard
 5. Deploy 🚀
