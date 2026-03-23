@@ -17,7 +17,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.feature_engineering import engineer_features, CITY_TIER_MAP
-from src.database import init_db
+from src.database import (
+    init_db, save_prediction, get_user_predictions,
+    delete_prediction, get_user_stats, get_user_profile,
+)
 from src.auth import (
     register_user, login_user, logout_user,
     is_authenticated, get_current_user, _set_session,
@@ -655,6 +658,99 @@ div[data-testid="stTextInput"] label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.65rem;
     color: #475569;
+    line-height: 1.7;
+}
+
+/* ── Dashboard metric tiles ── */
+.dash-metric {
+    background: rgba(15,23,42,0.65);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(99,102,241,0.22);
+    border-radius: 14px;
+    padding: 20px 22px;
+    transition: all 0.3s ease;
+}
+.dash-metric:hover {
+    border-color: rgba(99,102,241,0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(99,102,241,0.18);
+}
+.dash-metric-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: #475569; margin-bottom: 8px;
+}
+.dash-metric-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem; font-weight: 700;
+    color: #a78bfa;
+    text-shadow: 0 0 14px rgba(167,139,250,0.35);
+    line-height: 1;
+}
+.dash-metric-sub {
+    font-size: 0.65rem; color: #334155; margin-top: 5px;
+}
+
+/* ── Profile card ── */
+.profile-card {
+    background: rgba(15,23,42,0.65);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 16px;
+    padding: 28px 32px;
+    position: relative; overflow: hidden;
+}
+.profile-card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+}
+.profile-avatar {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+    box-shadow: 0 0 24px rgba(99,102,241,0.4);
+}
+.profile-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem; font-weight: 700; color: #e2e8f0;
+    margin-bottom: 4px;
+}
+.profile-email {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: #475569; margin-bottom: 20px;
+}
+.profile-stat {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(30,41,59,0.5);
+}
+.profile-stat-lbl { font-size: 0.75rem; color: #475569; }
+.profile-stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: #a78bfa; font-weight: 500;
+}
+
+/* ── Delete button ── */
+.stButton > button[kind="secondary"] {
+    background: rgba(239,68,68,0.1) !important;
+    border: 1px solid rgba(239,68,68,0.3) !important;
+    color: #f87171 !important;
+    border-radius: 8px !important;
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.8rem !important;
+    margin-top: 0 !important;
+    width: auto !important;
+    transition: all 0.2s ease !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: rgba(239,68,68,0.2) !important;
+    border-color: rgba(239,68,68,0.6) !important;
+    transform: translateY(-1px) !important;
 }
 </style>
 """
@@ -715,14 +811,21 @@ def render_sidebar(city, loc, area, bhk, baths, age, t_fl, floor, furn, park, li
         user = get_current_user()
         if user:
             last_login = user.get("last_login")
+            created_at = user.get("created_at")
             if last_login and hasattr(last_login, "strftime"):
-                ll_str = last_login.strftime("%d %b %Y, %H:%M UTC")
+                ll_str = last_login.strftime("%d %b %Y, %H:%M")
             else:
                 ll_str = "This session"
+            if created_at and hasattr(created_at, "strftime"):
+                joined_str = created_at.strftime("%d %b %Y")
+            else:
+                joined_str = "—"
             st.markdown(
                 f'<div class="sb-user-card">'
                 f'<div class="sb-user-name">👤 {user["username"]}</div>'
-                f'<div class="sb-user-meta">Last login: {ll_str}</div>'
+                f'<div class="sb-user-meta">'
+                f'Last login: {ll_str}<br>Joined: {joined_str}'
+                f'</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -1056,6 +1159,200 @@ def tab_market_explorer(df):
     st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
 
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+def render_dashboard(user_id: int):
+    """Full dashboard: stats, history table with delete, charts."""
+    import pandas as pd
+
+    # ── Stats ──────────────────────────────────────────────────────────────
+    with st.spinner("Loading your dashboard..."):
+        stats = get_user_stats(user_id)
+        preds = get_user_predictions(user_id)
+
+    total     = stats["total"]
+    avg_price = stats["avg_price"]
+
+    # ── Metric tiles ──────────────────────────────────────────────────────
+    m1, m2, m3 = st.columns(3)
+    m1.markdown(
+        f'<div class="dash-metric">'
+        f'<div class="dash-metric-lbl">Total Predictions</div>'
+        f'<div class="dash-metric-val">{total}</div>'
+        f'<div class="dash-metric-sub">All time</div>'
+        f'</div>', unsafe_allow_html=True)
+    m2.markdown(
+        f'<div class="dash-metric">'
+        f'<div class="dash-metric-lbl">Average Estimate</div>'
+        f'<div class="dash-metric-val">{fmt_inr(avg_price, compact=True) if avg_price else "—"}</div>'
+        f'<div class="dash-metric-sub">Across all properties</div>'
+        f'</div>', unsafe_allow_html=True)
+    cities_explored = len({p["city"] for p in preds}) if preds else 0
+    m3.markdown(
+        f'<div class="dash-metric">'
+        f'<div class="dash-metric-lbl">Cities Explored</div>'
+        f'<div class="dash-metric-val">{cities_explored}</div>'
+        f'<div class="dash-metric-sub">Unique cities</div>'
+        f'</div>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+
+    if not preds:
+        st.markdown("""
+        <div class="empty-card">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">No predictions yet</div>
+          <div class="empty-hint">Run your first estimation to see your dashboard.</div>
+        </div>""", unsafe_allow_html=True)
+        return
+
+    df_p = pd.DataFrame(preds)
+    df_p["created_at"] = pd.to_datetime(df_p["created_at"])
+    df_p["predicted_price"] = df_p["predicted_price"].astype(float)
+
+    # ── Charts ──────────────────────────────────────────────────────────────
+    ch1, ch2 = st.columns(2)
+
+    with ch1:
+        st.markdown('<div class="chart-title">Prediction History</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-desc">Estimated prices over time</div>', unsafe_allow_html=True)
+        df_sorted = df_p.sort_values("created_at")
+        fig_line = go.Figure(go.Scatter(
+            x=df_sorted["created_at"],
+            y=df_sorted["predicted_price"],
+            mode="lines+markers",
+            line=dict(color="#6366f1", width=2),
+            marker=dict(color="#a78bfa", size=7,
+                        line=dict(color="#6366f1", width=1.5)),
+            fill="tozeroy",
+            fillcolor="rgba(99,102,241,0.08)",
+            hovertemplate="%{x|%d %b %Y}<br>%{y:,.0f}<extra></extra>",
+        ))
+        fig_line.update_layout(
+            **PLOTLY_DARK, height=260,
+            xaxis=dict(showgrid=False, tickfont=dict(size=9)),
+            yaxis=dict(showgrid=True, gridcolor="rgba(99,102,241,0.1)",
+                       tickprefix="₹", tickformat=",.0f",
+                       tickfont=dict(size=9)),
+        )
+        st.plotly_chart(fig_line, use_container_width=True,
+                        config={"displayModeBar": False})
+
+    with ch2:
+        st.markdown('<div class="chart-title">Predictions by City</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-desc">Number of estimates per city</div>', unsafe_allow_html=True)
+        city_counts = df_p["city"].value_counts().reset_index()
+        city_counts.columns = ["city", "count"]
+        fig_bar = go.Figure(go.Bar(
+            x=city_counts["city"],
+            y=city_counts["count"],
+            marker=dict(
+                color=["rgba(244,114,182,0.85)" if i == 0 else "rgba(99,102,241,0.7)"
+                       for i in range(len(city_counts))],
+                line=dict(width=0),
+            ),
+            text=city_counts["count"],
+            textposition="outside",
+            textfont=dict(color="#e2e8f0", size=10),
+            hovertemplate="%{x}: %{y} predictions<extra></extra>",
+        ))
+        fig_bar.update_layout(
+            **PLOTLY_DARK, height=260,
+            xaxis=dict(showgrid=False, tickfont=dict(size=9)),
+            yaxis=dict(showgrid=True, gridcolor="rgba(99,102,241,0.1)",
+                       tickfont=dict(size=9)),
+            bargap=0.35,
+        )
+        st.plotly_chart(fig_bar, use_container_width=True,
+                        config={"displayModeBar": False})
+
+    # ── History table with delete ────────────────────────────────────────────
+    st.markdown('<div class="sec-head">🗂️ Prediction History</div>', unsafe_allow_html=True)
+
+    for i, row in enumerate(preds):
+        ts = row["created_at"]
+        date_str = ts.strftime("%d %b %Y, %H:%M") if hasattr(ts, "strftime") else str(ts)
+        price_str = fmt_inr(float(row["predicted_price"]))
+        col_info, col_del = st.columns([8, 1])
+        with col_info:
+            st.markdown(
+                f"""
+                <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(99,102,241,0.18);
+                            border-radius:10px;padding:10px 14px;margin-bottom:6px;
+                            display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:#e2e8f0;">
+                        🏙️ <b>{row['city']}</b> &nbsp;·&nbsp;
+                        {row['locality']} &nbsp;·&nbsp;
+                        {row['area_sqft']:,} sqft &nbsp;·&nbsp;
+                        {row['bhk']} BHK
+                    </span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;
+                                 color:#a78bfa;font-weight:600;">{price_str}</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#475569;">
+                        {date_str}
+                    </span>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        with col_del:
+            if st.button("🗑️", key=f"del_{row['id']}_{i}",
+                         help="Delete this prediction"):
+                with st.spinner("Deleting..."):
+                    ok = delete_prediction(row["id"], user_id)
+                if ok:
+                    st.success("Prediction deleted.", icon="✅")
+                    st.rerun()
+                else:
+                    st.error("Could not delete prediction.")
+
+
+# ── Profile ───────────────────────────────────────────────────────────────────
+
+def render_profile(user_id: int):
+    """Show user profile: avatar, username, email, join date, total predictions."""
+    with st.spinner("Loading profile..."):
+        profile = get_user_profile(user_id)
+
+    if not profile:
+        st.error("Could not load profile information.")
+        return
+
+    username   = profile.get("username", "—")
+    email      = profile.get("email", "—")
+    created_at = profile.get("created_at")
+    total_pred = int(profile.get("total_predictions", 0))
+    joined_str = created_at.strftime("%d %B %Y") if created_at and hasattr(created_at, "strftime") else "—"
+
+    _, center_col, _ = st.columns([1, 2, 1])
+    with center_col:
+        st.markdown(
+            f"""
+            <div class="profile-card">
+              <div class="profile-avatar">👤</div>
+              <div class="profile-name">{username}</div>
+              <div class="profile-email">{email}</div>
+              <div class="profile-stat">
+                <span class="profile-stat-lbl">Username</span>
+                <span class="profile-stat-val">{username}</span>
+              </div>
+              <div class="profile-stat">
+                <span class="profile-stat-lbl">Email</span>
+                <span class="profile-stat-val">{email}</span>
+              </div>
+              <div class="profile-stat">
+                <span class="profile-stat-lbl">Member Since</span>
+                <span class="profile-stat-val">{joined_str}</span>
+              </div>
+              <div class="profile-stat" style="border-bottom:none;">
+                <span class="profile-stat-lbl">Total Predictions</span>
+                <span class="profile-stat-val">{total_pred}</span>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def render_auth_page():
     """Render the login / register landing page."""
     inject_css()
@@ -1195,23 +1492,45 @@ def main():
 
     with col_out:
         if clicked:
-            inputs = {
-                "city": city, "locality_tier": loc,
-                "area_sqft": area, "bhk": bhk, "bathrooms": baths,
-                "floor": floor, "total_floors": t_fl,
-                "parking": int(park), "lift": int(lift),
-                "east_facing": int(east), "furnishing": furn,
-                "property_age": age,
-            }
-            with st.spinner("🔮 Calculating estimate..."):
-                time.sleep(0.35)
-                price = run_prediction(model, inputs)
-            if price:
-                st.session_state["price"]  = price
-                st.session_state["inputs"] = inputs
-                st.success("✅ Estimate ready")
+            # Input validation
+            if area < 100:
+                st.error("⚠️ Area must be at least 100 sqft.")
+            elif bhk < 1 or bhk > 10:
+                st.error("⚠️ BHK must be between 1 and 10.")
             else:
-                st.error("Prediction failed. Check model and inputs.")
+                inputs = {
+                    "city": city, "locality_tier": loc,
+                    "area_sqft": area, "bhk": bhk, "bathrooms": baths,
+                    "floor": floor, "total_floors": t_fl,
+                    "parking": int(park), "lift": int(lift),
+                    "east_facing": int(east), "furnishing": furn,
+                    "property_age": age,
+                }
+                with st.spinner("🔮 Calculating estimate..."):
+                    time.sleep(0.35)
+                    try:
+                        price = run_prediction(model, inputs)
+                    except Exception as e:
+                        price = None
+                        st.error(f"⚠️ Prediction failed: {e}")
+                if price:
+                    st.session_state["price"]  = price
+                    st.session_state["inputs"] = inputs
+                    st.success("✅ Estimate ready")
+                    # Auto-save prediction
+                    user = get_current_user()
+                    if user and user.get("user_id"):
+                        with st.spinner("Saving prediction..."):
+                            save_prediction(
+                                user_id       = user["user_id"],
+                                city          = city,
+                                locality      = loc,
+                                area_sqft     = int(area),
+                                bhk           = int(bhk),
+                                predicted_price = price,
+                            )
+                elif price is not None:
+                    st.error("⚠️ Prediction returned an unexpected value.")
 
         p  = st.session_state.get("price")
         si = st.session_state.get("inputs", {})
@@ -1225,17 +1544,36 @@ def main():
     with st.expander("🗺️ City Hotspot Map — India", expanded=False):
         render_india_map(city, city_stats)
 
-    # ── Analytics ──────────────────────────────────────────────────────────────
+    # ── Analytics & Feature Tabs ────────────────────────────────────────────────
     st.markdown("<hr style='border:none;border-top:1px solid rgba(99,102,241,0.15);margin:32px 0;'>", unsafe_allow_html=True)
 
     active_city = st.session_state.get("inputs", {}).get("city", city)
     active_inp  = st.session_state.get("inputs", {})
+    user        = get_current_user()
+    user_id     = user.get("user_id") if user else None
 
-    t1,t2,t3,t4 = st.tabs(["🏙️ City Prices","📊 Value Drivers","🤖 Model Performance","📈 Market Data"])
-    with t1: tab_city_prices(city_stats, active_city)
-    with t2: tab_value_drivers(active_inp)
-    with t3: tab_model_performance(metrics)
-    with t4: tab_market_explorer(df_market)
+    t1, t2, t3, t4, t5, t6 = st.tabs([
+        "📊 Dashboard",
+        "👤 Profile",
+        "🏙️ City Prices",
+        "📈 Value Drivers",
+        "🤖 Model Performance",
+        "🗺️ Market Data",
+    ])
+    with t1:
+        if user_id:
+            render_dashboard(user_id)
+        else:
+            st.warning("Please log in to view your dashboard.")
+    with t2:
+        if user_id:
+            render_profile(user_id)
+        else:
+            st.warning("Please log in to view your profile.")
+    with t3: tab_city_prices(city_stats, active_city)
+    with t4: tab_value_drivers(active_inp)
+    with t5: tab_model_performance(metrics)
+    with t6: tab_market_explorer(df_market)
 
     st.markdown(
         "<p style='text-align:center;font-size:0.68rem;color:#1e293b;margin-top:40px;"

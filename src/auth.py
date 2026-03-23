@@ -185,10 +185,11 @@ def get_current_user() -> dict:
     if not is_authenticated():
         return {}
     return {
-        "user_id":   st.session_state.get("user_id"),
-        "username":  st.session_state.get("username"),
-        "email":     st.session_state.get("email"),
+        "user_id":    st.session_state.get("user_id"),
+        "username":   st.session_state.get("username"),
+        "email":      st.session_state.get("email"),
         "last_login": st.session_state.get("last_login"),
+        "created_at": st.session_state.get("created_at"),
     }
 
 
@@ -199,3 +200,4 @@ def _set_session(user: dict):
     st.session_state["username"]      = user["username"]
     st.session_state["email"]         = user["email"]
     st.session_state["last_login"]    = user.get("last_login")
+    st.session_state["created_at"]    = user.get("created_at")
