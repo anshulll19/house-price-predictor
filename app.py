@@ -28,7 +28,7 @@ from src.auth import (
 
 st.set_page_config(
     page_title="House Price Estimator",
-    page_icon="🏠",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -96,709 +96,366 @@ def run_prediction(model, inputs: dict) -> float | None:
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    background: #060d0b !important;
+    color: #ffffff;
 }
 .stApp {
-    background: #020817;
+    background: #060d0b !important;
     min-height: 100vh;
 }
 .main .block-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 24px 32px 80px 32px;
+    padding: 0px 32px 80px 32px;
 }
 #MainMenu, footer, header { visibility: hidden; }
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #0f172a; }
-::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#3b82f6,#8b5cf6); border-radius: 99px; }
 
-/* ── Particle canvas ── */
-#particle-canvas {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    pointer-events: none; z-index: 0;
-}
-
-/* ── Glass card base ── */
-.glass {
-    background: rgba(15,23,42,0.55);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(99,102,241,0.25);
-    border-radius: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.glass:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 20px 60px rgba(99,102,241,0.2), 0 0 0 1px rgba(139,92,246,0.3);
-}
-.glass::before {
-    content:'';
-    position:absolute; inset:0;
-    border-radius:16px;
-    padding:1px;
-    background: linear-gradient(135deg, rgba(59,130,246,0.5), rgba(139,92,246,0.3), rgba(236,72,153,0.2));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events:none;
-    animation: borderPulse 4s ease-in-out infinite;
-}
-@keyframes borderPulse {
-    0%,100% { opacity:0.6; }
-    50% { opacity:1; }
-}
-
-/* ── Neon glow pulse ── */
-.glow-card {
-    box-shadow: 0 0 20px rgba(59,130,246,0.15), 0 8px 32px rgba(0,0,0,0.4);
-    animation: cardGlow 3s ease-in-out infinite;
-}
-@keyframes cardGlow {
-    0%,100% { box-shadow: 0 0 20px rgba(59,130,246,0.15), 0 8px 32px rgba(0,0,0,0.4); }
-    50% { box-shadow: 0 0 40px rgba(139,92,246,0.3), 0 8px 48px rgba(0,0,0,0.5); }
-}
-
-/* ── Result card float ── */
-.float-card {
-    animation: floatY 4s ease-in-out infinite;
-}
-@keyframes floatY {
-    0%,100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-}
-
-/* ── Hero section ── */
-.hero {
-    padding: 32px 0 24px 0;
-    position: relative;
-}
-.hero-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 3.2rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
-    animation: fadeSlideDown 0.8s ease both;
-}
-@keyframes fadeSlideDown {
-    from { opacity:0; transform:translateY(-20px); }
-    to { opacity:1; transform:translateY(0); }
-}
-.hero-sub {
-    font-size: 1rem;
-    color: #64748b;
-    margin-top: 10px;
-    line-height: 1.6;
-    animation: fadeSlideDown 0.8s 0.2s ease both;
-}
-
-/* ── XGBoost badge ── */
-.xgb-badge {
-    display: inline-flex;
+/* ── Top Navbar ── */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15));
-    border: 1px solid rgba(99,102,241,0.4);
-    border-radius: 999px;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+    margin-bottom: 40px;
+}
+.nav-left {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.nav-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #888;
+}
+.nav-btn {
+    background: transparent;
+    border: 1px solid #00ff88;
+    color: #00ff88;
     padding: 6px 16px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: #a78bfa;
-    animation: badgePop 0.6s 0.5s cubic-bezier(0.34,1.56,0.64,1) both, badgeGlow 3s 1s ease-in-out infinite;
-    cursor: default;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
 }
-@keyframes badgePop {
-    from { opacity:0; transform:scale(0.5); }
-    to { opacity:1; transform:scale(1); }
-}
-@keyframes badgeGlow {
-    0%,100% { box-shadow: 0 0 8px rgba(99,102,241,0.2); }
-    50% { box-shadow: 0 0 20px rgba(139,92,246,0.5); }
-}
-.badge-dot {
-    width:7px; height:7px;
-    background: #a78bfa;
-    border-radius: 50%;
-    box-shadow: 0 0 8px #a78bfa;
-    animation: dotPulse 1.5s ease-in-out infinite;
-}
-@keyframes dotPulse {
-    0%,100% { transform:scale(1); opacity:1; }
-    50% { transform:scale(1.6); opacity:0.6; }
+.nav-btn:hover {
+    background: rgba(0, 255, 136, 0.1);
 }
 
-/* ── Section headers ── */
+/* ── Hero Section ── */
+.hero-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.hero-title {
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+    margin-bottom: 12px;
+    line-height: 1.1;
+}
+.hero-sub {
+    font-size: 1.1rem;
+    color: #888;
+}
+
+/* ── Pipeline Tabs ── */
+.pipeline-wrap {
+    margin-bottom: 60px;
+}
+.pipeline-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.p-tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #666;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0a1411;
+    border-radius: 4px;
+}
+.p-tab.active {
+    color: #00ff88;
+    border-color: #00ff88;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+}
+.p-bar-track {
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+}
+.p-bar-fill {
+    width: 80%; /* 4th tab is active */
+    height: 100%;
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+}
+
+/* ── Form Inputs ── */
 .sec-head {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: #444;
     text-transform: uppercase;
-    color: #475569;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(99,102,241,0.15);
-    margin-top: 20px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+    margin-top: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
 }
 
-/* ── Staggered slide-in inputs ── */
-div[data-testid="stSelectbox"],
-div[data-testid="stNumberInput"],
-div[data-testid="stToggle"] {
-    animation: slideInLeft 0.5s ease both;
-}
-@keyframes slideInLeft {
-    from { opacity:0; transform:translateX(-24px); }
-    to { opacity:1; transform:translateX(0); }
-}
-
-/* ── Input styling ── */
 div[data-testid="stSelectbox"] > div > div,
-div[data-testid="stNumberInput"] input {
-    background: rgba(15,23,42,0.7) !important;
-    border: 1px solid rgba(99,102,241,0.3) !important;
-    border-radius: 10px !important;
-    color: #e2e8f0 !important;
+div[data-testid="stNumberInput"] input,
+div[data-testid="stTextInput"] input {
+    background: #0a1411 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px !important;
+    color: #ffffff !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.875rem !important;
-    height: 42px !important;
+    height: 48px !important;
+    padding: 0 14px !important;
     transition: all 0.2s ease !important;
 }
 div[data-testid="stSelectbox"] > div > div:focus-within,
-div[data-testid="stNumberInput"] input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.2), 0 0 16px rgba(99,102,241,0.15) !important;
-    outline:none !important;
+div[data-testid="stNumberInput"] input:focus,
+div[data-testid="stTextInput"] input:focus {
+    border-color: #00ff88 !important;
+    box-shadow: 0 0 0 1px #00ff88 !important;
+    outline: none !important;
 }
 div[data-testid="stNumberInput"] button {
-    background: rgba(30,41,59,0.8) !important;
-    border-color: rgba(99,102,241,0.3) !important;
-    color: #94a3b8 !important;
-    transition: all 0.15s !important;
+    background: #0a1411 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #888 !important;
 }
 div[data-testid="stNumberInput"] button:hover {
-    background: rgba(99,102,241,0.2) !important;
-    color: #a78bfa !important;
-    box-shadow: 0 0 12px rgba(99,102,241,0.3) !important;
-}
-div[data-testid="stNumberInput"] button:active {
-    animation: ripple 0.4s ease;
-}
-@keyframes ripple {
-    0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.6); }
-    100% { box-shadow: 0 0 0 12px rgba(99,102,241,0); }
+    color: #00ff88 !important;
 }
 label {
-    color: #64748b !important;
+    color: #aaa !important;
+    font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.75rem !important;
-    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
 }
-div[data-testid="stToggle"] label { color: #94a3b8 !important; font-size: 0.85rem !important; }
-
-/* ── Toggle switches ── */
-div[data-testid="stToggle"] input[type="checkbox"] { accent-color: #6366f1; }
+div[data-testid="stToggle"] label { color: #aaa !important; }
+div[data-testid="stToggle"] input[type="checkbox"] { accent-color: #00ff88; }
 div[data-testid="stToggle"] > label > div:first-child {
-    background: rgba(30,41,59,0.8) !important;
-    border: 1px solid rgba(99,102,241,0.3) !important;
-    transition: all 0.3s ease !important;
+    background: #0a1411 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* ── CTA Button ── */
+/* ── Button ── */
 .stButton > button {
     width: 100% !important;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899) !important;
-    background-size: 200% 200% !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.95rem !important;
+    background: transparent !important;
+    color: #00ff88 !important;
+    border: 1px solid #00ff88 !important;
+    border-radius: 4px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.02em !important;
-    padding: 0.8rem 1.5rem !important;
-    margin-top: 12px !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 0 20px rgba(99,102,241,0.3) !important;
-    animation: gradientShift 4s ease infinite !important;
-}
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    padding: 1rem !important;
+    text-transform: uppercase !important;
+    transition: all 0.2s ease !important;
 }
 .stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 0 40px rgba(99,102,241,0.5), 0 8px 32px rgba(0,0,0,0.3) !important;
+    background: rgba(0, 255, 136, 0.1) !important;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2) !important;
 }
-.stButton > button:active { transform: translateY(0) !important; }
 
-/* ── Result card ── */
-.res-card {
-    background: rgba(15,23,42,0.7);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(99,102,241,0.3);
-    border-radius: 20px;
-    padding: 32px 28px;
-    min-height: 320px;
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(160deg, #022b1c 0%, #061710 100%) !important;
+    border-right: 1px solid rgba(0, 255, 136, 0.2) !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    background: transparent !important;
+}
+section[data-testid="stSidebar"] * {
+    color: #e0f2ec !important;
+}
+.sidebar-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #00ff88 !important;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+}
+.sb-user-card {
+    background: rgba(0, 255, 136, 0.05);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+.sb-user-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff !important;
+    margin-bottom: 8px;
+}
+.sb-user-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: #88c0a8 !important;
+    line-height: 1.5;
+}
+.sb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+}
+.sb-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: #88c0a8 !important;
+}
+.sb-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #00ff88 !important;
+}
+
+/* ── Panels ── */
+.left-panel {
+    background: #0a1411;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    padding: 32px;
+    border-radius: 8px;
     position: relative;
-    overflow: hidden;
-    animation: floatY 4s ease-in-out infinite, cardGlow 3s ease-in-out infinite;
 }
-.res-card::before {
-    content:'';
-    position:absolute; top:0; left:0; right:0; height:3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-    animation: gradientSlide 3s linear infinite;
-}
-@keyframes gradientSlide {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 0%; }
-}
-.res-card::after {
-    content:'';
-    position:absolute; bottom:-50px; right:-50px;
-    width:200px; height:200px;
-    background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+/* Left panel watermark */
+.watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 4rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.02);
     pointer-events: none;
+    z-index: 0;
+    letter-spacing: 0.2em;
+}
+
+.right-panel {
+    background: #0a1411;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    padding: 32px;
+    border-radius: 8px;
+    min-height: 100%;
+}
+.res-card {
+    position: relative;
+    z-index: 1;
 }
 .res-eyebrow {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
+    font-size: 0.75rem;
+    color: #00ff88;
+    margin-bottom: 24px;
     text-transform: uppercase;
-    color: #6366f1;
-    margin-bottom: 12px;
+    letter-spacing: 0.1em;
 }
 .res-price {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 3.2rem;
+    font-size: 4rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.04em;
+    color: #ffffff;
     line-height: 1;
-    text-shadow: none;
-    filter: drop-shadow(0 0 20px rgba(99,102,241,0.4));
+    margin-bottom: 16px;
+    font-family: 'Inter', sans-serif;
 }
 .res-context {
-    font-size: 0.78rem;
-    color: #475569;
-    margin-top: 8px;
     font-family: 'JetBrains Mono', monospace;
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+}
+.conf-tag {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    margin-bottom: 32px;
 }
 .range-row {
-    display: flex; gap: 8px; margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 24px;
 }
 .range-cell {
-    flex:1;
-    background: rgba(30,41,59,0.6);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 10px;
-    padding: 10px 8px;
-    text-align: center;
-    transition: all 0.2s;
-}
-.range-cell:hover {
-    border-color: rgba(99,102,241,0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.2);
+    flex: 1;
 }
 .range-lbl {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.58rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    color: #666;
+    margin-bottom: 8px;
     text-transform: uppercase;
-    color: #475569;
-    margin-bottom: 4px;
 }
-.range-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 600; color: #94a3b8; }
-.range-val.accent { color: #a78bfa; text-shadow: 0 0 10px rgba(167,139,250,0.5); }
-.conf-tag {
-    display: inline-block;
-    margin-top: 16px;
-    background: rgba(30,41,59,0.7);
-    border: 1px solid rgba(99,102,241,0.25);
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #64748b;
-    padding: 4px 12px;
-}
-.insight-wrap {
-    margin-top: 16px;
-    padding: 12px 16px;
-    background: rgba(99,102,241,0.08);
-    border-left: 3px solid #6366f1;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.8rem;
-    color: #94a3b8;
-    line-height: 1.6;
-}
-
-/* ── Empty state ── */
-.empty-card {
-    background: rgba(15,23,42,0.4);
-    backdrop-filter: blur(16px);
-    border: 1px dashed rgba(99,102,241,0.25);
-    border-radius: 20px;
-    padding: 60px 24px;
-    min-height: 300px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-}
-.empty-icon { font-size: 2.5rem; margin-bottom: 14px; opacity: 0.5; animation: floatY 3s ease-in-out infinite; }
-.empty-title { font-family:'Space Grotesk',sans-serif; font-size:0.9rem; font-weight:500; color:#475569; }
-.empty-hint  { font-size:0.75rem; color:#334155; margin-top:6px; }
-
-/* ── Tabs ── */
-div[data-testid="stTabs"] > div:first-child {
-    border-bottom: 1px solid rgba(99,102,241,0.15);
-    gap:0;
-    position: relative;
-}
-button[data-baseweb="tab"] {
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.82rem !important;
-    font-weight: 500 !important;
-    color: #475569 !important;
-    padding: 10px 20px !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    transition: color 0.2s !important;
-}
-button[data-baseweb="tab"][aria-selected="true"] {
-    color: #a78bfa !important;
-    border-bottom: 2px solid #6366f1 !important;
-    text-shadow: 0 0 10px rgba(99,102,241,0.5) !important;
-}
-button[data-baseweb="tab"]:hover { color: #94a3b8 !important; }
-
-/* ── Chart helpers ── */
-.chart-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-bottom: 2px;
-}
-.chart-desc { font-size: 0.75rem; color: #475569; margin-bottom: 14px; }
-
-/* ── Perf tiles ── */
-.perf-tile {
-    background: rgba(15,23,42,0.6);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 12px;
-    padding: 18px 20px;
-    transition: all 0.3s ease;
-}
-.perf-tile:hover {
-    border-color: rgba(99,102,241,0.5);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(99,102,241,0.2);
-}
-.perf-lbl {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #475569; margin-bottom: 6px;
-}
-.perf-val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.4rem; font-weight: 700; color: #a78bfa;
-    text-shadow: 0 0 12px rgba(167,139,250,0.4);
-}
-.perf-sub { font-size: 0.68rem; color: #334155; margin-top: 3px; }
-
-/* ── Success/Error ── */
-div[data-testid="stSuccess"] {
-    background: rgba(16,185,129,0.1) !important;
-    border: 1px solid rgba(16,185,129,0.3) !important;
-    border-radius: 10px !important;
-    color: #34d399 !important;
-    font-size: 0.82rem !important;
-}
-div[data-testid="stError"] {
-    background: rgba(239,68,68,0.1) !important;
-    border: 1px solid rgba(239,68,68,0.3) !important;
-    border-radius: 10px !important;
-    font-size: 0.82rem !important;
-}
-
-/* ── Sidebar (live summary) ── */
-section[data-testid="stSidebar"] {
-    background: rgba(10,15,28,0.85) !important;
-    backdrop-filter: blur(24px) !important;
-    border-right: 1px solid rgba(99,102,241,0.2) !important;
-}
-section[data-testid="stSidebar"] .stMarkdown { color: #94a3b8; }
-.sidebar-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: #6366f1; margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(99,102,241,0.2);
-}
-.sb-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(30,41,59,0.5);
-}
-.sb-label { font-size: 0.72rem; color: #475569; }
-.sb-value { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a78bfa; font-weight: 500; }
-
-/* ── Loading spinner override ── */
-div[data-testid="stSpinner"] > div {
-    border-color: rgba(99,102,241,0.3) !important;
-    border-top-color: #6366f1 !important;
-}
-
-/* ── Dataframe ── */
-div[data-testid="stDataFrame"] {
-    border-radius: 10px; overflow: hidden;
-    border: 1px solid rgba(99,102,241,0.2) !important;
-}
-
-/* ── Auth page ── */
-.auth-wrap {
-    max-width: 460px;
-    margin: 80px auto 0 auto;
-}
-.auth-card {
-    background: rgba(15,23,42,0.75);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    border: 1px solid rgba(99,102,241,0.3);
-    border-radius: 20px;
-    padding: 40px 36px 36px 36px;
-    position: relative;
-    overflow: hidden;
-    animation: fadeSlideDown 0.6s ease both;
-}
-.auth-card::before {
-    content:'';
-    position:absolute; top:0; left:0; right:0; height:3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-}
-.auth-logo {
-    font-size: 2.8rem;
-    text-align: center;
-    margin-bottom: 4px;
-}
-.auth-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    text-align: center;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 4px;
-}
-.auth-sub {
-    font-size: 0.78rem;
-    color: #475569;
-    text-align: center;
-    margin-bottom: 28px;
+.range-val {
     font-family: 'Inter', sans-serif;
-}
-/* Style text inputs inside auth card */
-div[data-testid="stTextInput"] input {
-    background: rgba(15,23,42,0.8) !important;
-    border: 1px solid rgba(99,102,241,0.3) !important;
-    border-radius: 10px !important;
-    color: #e2e8f0 !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.875rem !important;
-    transition: all 0.2s ease !important;
-}
-div[data-testid="stTextInput"] input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
-    outline: none !important;
-}
-div[data-testid="stTextInput"] label {
-    color: #64748b !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-}
-/* Sidebar user card */
-.sb-user-card {
-    background: rgba(99,102,241,0.08);
-    border: 1px solid rgba(99,102,241,0.2);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-}
-.sb-user-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: #e2e8f0;
-    margin-bottom: 3px;
-}
-.sb-user-meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: #475569;
-    line-height: 1.7;
+    font-size: 1.1rem;
+    color: #fff;
+    font-weight: 500;
 }
 
-/* ── Dashboard metric tiles ── */
-.dash-metric {
-    background: rgba(15,23,42,0.65);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(99,102,241,0.22);
-    border-radius: 14px;
-    padding: 20px 22px;
-    transition: all 0.3s ease;
-}
-.dash-metric:hover {
-    border-color: rgba(99,102,241,0.5);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(99,102,241,0.18);
-}
-.dash-metric-lbl {
+.empty-state {
+    text-align: center;
+    padding: 60px 0;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.58rem; font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: #475569; margin-bottom: 8px;
-}
-.dash-metric-val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.6rem; font-weight: 700;
-    color: #a78bfa;
-    text-shadow: 0 0 14px rgba(167,139,250,0.35);
-    line-height: 1;
-}
-.dash-metric-sub {
-    font-size: 0.65rem; color: #334155; margin-top: 5px;
+    color: #666;
 }
 
-/* ── Profile card ── */
-.profile-card {
-    background: rgba(15,23,42,0.65);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(99,102,241,0.25);
-    border-radius: 16px;
-    padding: 28px 32px;
-    position: relative; overflow: hidden;
+/* Auth Page overrides */
+.auth-bg { display: none; }
+.auth-card {
+    background: #0a1411;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 8px;
+    box-shadow: none;
 }
-.profile-card::before {
-    content:'';
-    position:absolute; top:0; left:0; right:0; height:3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-}
-.profile-avatar {
-    width: 64px; height: 64px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    margin-bottom: 16px;
-    box-shadow: 0 0 24px rgba(99,102,241,0.4);
-}
-.profile-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.25rem; font-weight: 700; color: #e2e8f0;
-    margin-bottom: 4px;
-}
-.profile-email {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem; color: #475569; margin-bottom: 20px;
-}
-.profile-stat {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 9px 0;
-    border-bottom: 1px solid rgba(30,41,59,0.5);
-}
-.profile-stat-lbl { font-size: 0.75rem; color: #475569; }
-.profile-stat-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem; color: #a78bfa; font-weight: 500;
-}
+.auth-title { background: none; -webkit-text-fill-color: #fff; color: #fff; }
+.auth-logo { border-color: #00ff88; background: transparent; box-shadow: none; color: #00ff88; }
+.auth-divider { display: none; }
 
-/* ── Delete button ── */
-.stButton > button[kind="secondary"] {
-    background: rgba(239,68,68,0.1) !important;
-    border: 1px solid rgba(239,68,68,0.3) !important;
-    color: #f87171 !important;
-    border-radius: 8px !important;
-    font-size: 0.75rem !important;
-    padding: 0.3rem 0.8rem !important;
-    margin-top: 0 !important;
-    width: auto !important;
-    transition: all 0.2s ease !important;
-}
-.stButton > button[kind="secondary"]:hover {
-    background: rgba(239,68,68,0.2) !important;
-    border-color: rgba(239,68,68,0.6) !important;
-    transform: translateY(-1px) !important;
-}
 </style>
 """
 
-PARTICLE_JS = """
-<canvas id="particle-canvas"></canvas>
-<script>
-(function(){
-const canvas = document.getElementById('particle-canvas');
-const ctx = canvas.getContext('2d');
-let W, H, particles = [];
-const N = 80, COLOR = 'rgba(99,102,241,', MAX_DIST = 130;
-function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
-window.addEventListener('resize', resize); resize();
-for(let i=0;i<N;i++) particles.push({
-    x:Math.random()*W, y:Math.random()*H,
-    vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.4,
-    r:Math.random()*2+1
-});
-function draw(){
-    ctx.clearRect(0,0,W,H);
-    for(let i=0;i<N;i++){
-        const p=particles[i];
-        p.x+=p.vx; p.y+=p.vy;
-        if(p.x<0||p.x>W) p.vx*=-1;
-        if(p.y<0||p.y>H) p.vy*=-1;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle=COLOR+'0.6)';
-        ctx.fill();
-        for(let j=i+1;j<N;j++){
-            const q=particles[j];
-            const d=Math.hypot(p.x-q.x,p.y-q.y);
-            if(d<MAX_DIST){
-                ctx.beginPath();
-                ctx.strokeStyle=COLOR+(1-d/MAX_DIST)*0.3+')';
-                ctx.lineWidth=0.5;
-                ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
-                ctx.stroke();
-            }
-        }
-    }
-    requestAnimationFrame(draw);
-}
-draw();
-})();
-</script>
-"""
+
+PARTICLE_JS = ""
 
 
 def inject_css():
@@ -822,20 +479,20 @@ def render_sidebar(city, loc, area, bhk, baths, age, t_fl, floor, furn, park, li
                 joined_str = "—"
             st.markdown(
                 f'<div class="sb-user-card">'
-                f'<div class="sb-user-name">👤 {user["username"]}</div>'
+                f'<div class="sb-user-name">{user["username"]}</div>'
                 f'<div class="sb-user-meta">'
                 f'Last login: {ll_str}<br>Joined: {joined_str}'
                 f'</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
-            if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+            if st.button("Logout", key="logout_btn", use_container_width=True):
                 logout_user()
                 st.rerun()
             st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
         # ── Live input summary ────────────────────────────────────────────
-        st.markdown('<div class="sidebar-title">📊 Live Input Summary</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-title">Live Input Summary</div>', unsafe_allow_html=True)
         rows = [
             ("City", city), ("Locality", loc), ("Area", f"{area:,} sqft"),
             ("Config", f"{bhk} BHK"), ("Baths", str(baths)),
@@ -852,18 +509,17 @@ def render_sidebar(city, loc, area, bhk, baths, age, t_fl, floor, furn, park, li
 
 
 def render_hero(metrics):
-    name = metrics["best_model"].split()[0] if metrics else "XGBoost"
-    r2   = f"{metrics['metrics'][metrics['best_model']]['R2']:.4f}" if metrics else "—"
-    st.markdown(f"""
-<div class="hero">
-  <div class="hero-title">House Price<br>Estimator</div>
-  <p class="hero-sub">AI-powered property valuation for Indian real estate markets.<br>Instant estimates using ML models trained on real housing data.</p>
-  <div style="margin-top:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-    <span class="xgb-badge"><span class="badge-dot"></span>{name} &nbsp;·&nbsp; R² {r2}</span>
-    <span style="font-size:0.72rem;color:#334155;font-family:'JetBrains Mono',monospace;">10 Cities &nbsp;·&nbsp; Live ML Model</span>
-  </div>
+    st.markdown("""
+<div class="top-nav" style="border-bottom: none; margin-bottom: 0px;">
+  <div class="nav-left">House.Predict</div>
+</div>
+
+<div class="hero-section">
+  <div class="hero-title">THE PREDICTION ENGINE</div>
+  <div class="hero-sub">From raw inputs to accurate valuations in &lt; 500ms</div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 def render_india_map(selected_city, city_stats):
@@ -908,12 +564,14 @@ def render_india_map(selected_city, city_stats):
 
 def render_empty_state():
     st.markdown("""
-<div class="empty-card">
-  <div class="empty-icon">🏠</div>
-  <div class="empty-title">No estimate generated yet</div>
-  <div class="empty-hint">Configure the property details and click Estimate Price.</div>
+<div class="right-panel">
+  <div class="empty-state">
+    [ WAITING FOR INPUT ]<br><br>
+    Configure property details on the left and initialize prediction sequence.
+  </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 def render_result(price: float, inputs: dict, city_stats):
@@ -921,47 +579,33 @@ def render_result(price: float, inputs: dict, city_stats):
     high = price * 1.12
     ppsf = price / max(inputs["area_sqft"], 1)
 
-    insight = ""
-    if city_stats:
-        overall  = city_stats.get("_overall_median", {}).get("median_price_per_sqft", 8000)
-        city_med = city_stats.get(inputs["city"], {}).get("median_price_per_sqft", overall)
-        ratio    = (price / inputs["area_sqft"]) / city_med if city_med else 1
-        if ratio > 1.25:
-            insight = f"This estimate is above the median for comparable properties in {inputs['city']}."
-        elif ratio < 0.80:
-            insight = f"Strong value — estimate is below the median rate for {inputs['city']}."
-        else:
-            insight = f"Aligned with current market rates for {inputs['locality_tier'].lower()} properties in {inputs['city']}."
-
     st.markdown(f"""
-<div class="res-card">
-  <div class="res-eyebrow">⬡ Estimated Market Value</div>
-  <div class="res-price">{fmt_inr(price)}</div>
-  <div class="res-context">
-    {inputs['city']} · {inputs['locality_tier']} · {inputs['bhk']} BHK · {inputs['area_sqft']:,} sqft
+<div class="right-panel">
+  <div class="res-card">
+    <div class="res-eyebrow">Prediction Output</div>
+    <div class="res-price">{fmt_inr(price)}</div>
+    <div class="res-context">
+      {inputs['city'].upper()} // {inputs['locality_tier'].upper()} // {inputs['bhk']} BHK // {inputs['area_sqft']:,} SQFT
+    </div>
+    <div class="conf-tag">CONFIDENCE: ±12%</div>
+    <div class="range-row">
+      <div class="range-cell">
+        <div class="range-lbl">Est. Low</div>
+        <div class="range-val">{fmt_inr(low, compact=True)}</div>
+      </div>
+      <div class="range-cell">
+        <div class="range-lbl">Est. High</div>
+        <div class="range-val">{fmt_inr(high, compact=True)}</div>
+      </div>
+      <div class="range-cell">
+        <div class="range-lbl">Price / Sqft</div>
+        <div class="range-val">{fmt_inr(ppsf, compact=True)}</div>
+      </div>
+    </div>
   </div>
-  <div class="range-row">
-    <div class="range-cell">
-      <div class="range-lbl">Low</div>
-      <div class="range-val">{fmt_inr(low, compact=True)}</div>
-    </div>
-    <div class="range-cell">
-      <div class="range-lbl">Estimate</div>
-      <div class="range-val accent">{fmt_inr(price, compact=True)}</div>
-    </div>
-    <div class="range-cell">
-      <div class="range-lbl">High</div>
-      <div class="range-val">{fmt_inr(high, compact=True)}</div>
-    </div>
-    <div class="range-cell">
-      <div class="range-lbl">Per sqft</div>
-      <div class="range-val">{fmt_inr(ppsf, compact=True)}</div>
-    </div>
-  </div>
-  <span class="conf-tag">Confidence interval ±12%</span>
-  {"<div class='insight-wrap'>" + insight + "</div>" if insight else ""}
 </div>
 """, unsafe_allow_html=True)
+
 
 
 def tab_city_prices(city_stats, selected_city):
@@ -1267,7 +911,7 @@ def render_dashboard(user_id: int):
                         config={"displayModeBar": False})
 
     # ── History table with delete ────────────────────────────────────────────
-    st.markdown('<div class="sec-head">🗂️ Prediction History</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-head">Prediction History</div>', unsafe_allow_html=True)
 
     for i, row in enumerate(preds):
         ts = row["created_at"]
@@ -1281,7 +925,7 @@ def render_dashboard(user_id: int):
                             border-radius:10px;padding:10px 14px;margin-bottom:6px;
                             display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:#e2e8f0;">
-                        🏙️ <b>{row['city']}</b> &nbsp;·&nbsp;
+                        <b>{row['city']}</b> &nbsp;·&nbsp;
                         {row['locality']} &nbsp;·&nbsp;
                         {row['area_sqft']:,} sqft &nbsp;·&nbsp;
                         {row['bhk']} BHK
@@ -1295,7 +939,7 @@ def render_dashboard(user_id: int):
                 unsafe_allow_html=True,
             )
         with col_del:
-            if st.button("🗑️", key=f"del_{row['id']}_{i}",
+            if st.button("Delete", key=f"del_{row['id']}_{i}",
                          help="Delete this prediction"):
                 with st.spinner("Deleting..."):
                     ok = delete_prediction(row["id"], user_id)
@@ -1328,7 +972,7 @@ def render_profile(user_id: int):
         st.markdown(
             f"""
             <div class="profile-card">
-              <div class="profile-avatar">👤</div>
+              <div class="profile-avatar"></div>
               <div class="profile-name">{username}</div>
               <div class="profile-email">{email}</div>
               <div class="profile-stat">
@@ -1357,33 +1001,33 @@ def render_auth_page():
     """Render the login / register landing page."""
     inject_css()
 
-    st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="auth-card">'
-        '<div class="auth-logo">🏠</div>'
-        '<div class="auth-title">House Price Estimator</div>'
-        '<div class="auth-sub">AI-powered property valuation · Sign in to continue</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+    # Gradient mesh background overlay (fixed, full-screen)
+    st.markdown('<div class="auth-bg"></div>', unsafe_allow_html=True)
 
-    # Render inside an actual container so Streamlit widgets work
-    with st.container():
+    # Center content using columns
+    _, mid, _ = st.columns([1, 1.5, 1])
+
+    with mid:
+        # ── Header card (pure HTML) ──────────────────────────────────────
         st.markdown(
-            '<div style="background:rgba(15,23,42,0.75);backdrop-filter:blur(28px);'
-            'border:1px solid rgba(99,102,241,0.3);border-radius:20px;'
-            'padding:36px;margin-top:-8px;position:relative;">',
+            '<div class="auth-card">'
+            '<div class="auth-logo"></div>'
+            '<div class="auth-title">House Price Estimator</div>'
+            '<div class="auth-sub">AI-powered property valuation &nbsp;·&nbsp; India</div>'
+            '<div class="auth-divider"></div>'
+            '</div>',
             unsafe_allow_html=True,
         )
-        login_tab, register_tab = st.tabs(["🔑  Login", "✨  Register"])
+
+        login_tab, register_tab = st.tabs(["🔑  Sign In", " Create Account"])
 
         # ── Login ───────────────────────────────────────────────────────────
         with login_tab:
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-            l_email = st.text_input("Email", key="l_email", placeholder="you@example.com")
+            st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+            l_email = st.text_input("Email address", key="l_email", placeholder="you@example.com")
             l_pass  = st.text_input("Password", type="password", key="l_pass", placeholder="••••••••")
-            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
-            if st.button("Sign In", key="login_btn", use_container_width=True):
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            if st.button("Sign In  →", key="login_btn", use_container_width=True):
                 if not l_email or not l_pass:
                     st.error("Please fill in all fields.")
                 else:
@@ -1397,22 +1041,27 @@ def render_auth_page():
 
         # ── Register ────────────────────────────────────────────────────────
         with register_tab:
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
             r_user    = st.text_input("Username",         key="r_user",    placeholder="johndoe")
-            r_email   = st.text_input("Email",            key="r_email",   placeholder="you@example.com")
+            r_email   = st.text_input("Email address",    key="r_email",   placeholder="you@example.com")
             r_pass    = st.text_input("Password",         type="password", key="r_pass",  placeholder="Min 8 chars, letters + digits")
             r_confirm = st.text_input("Confirm Password", type="password", key="r_confirm", placeholder="Repeat password")
-            st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
-            if st.button("Create Account", key="register_btn", use_container_width=True):
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            if st.button("Create Account  →", key="register_btn", use_container_width=True):
                 with st.spinner("Creating account..."):
                     ok, msg = register_user(r_user, r_email, r_pass, r_confirm)
                 if ok:
-                    st.success("✅ Account created! Switch to Login to sign in.")
+                    st.success("✅ Account created! Switch to Sign In to continue.")
                 else:
                     st.error(msg)
 
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        # ── Footer ──────────────────────────────────────────────────────────
+        st.markdown(
+            '<div class="auth-footer">'
+            'India House Price Estimator &nbsp;·&nbsp; scikit-learn + XGBoost'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def main():
@@ -1447,17 +1096,18 @@ def main():
         st.stop()
 
     # ── Two-column layout ──────────────────────────────────────────────────────
-    col_in, col_out = st.columns([5, 4], gap="large")
+    col_in, col_out = st.columns([1, 1], gap="large")
 
     with col_in:
-        st.markdown('<div class="sec-head">📍 Location</div>', unsafe_allow_html=True)
+        st.markdown('<div class="left-panel"><div class="watermark">PROCESSING</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-head">Location</div>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         city = c1.selectbox("City", CITIES, index=0, key="city",
                              help="Select the city where the property is located")
         loc  = c2.selectbox("Locality Tier", LOCALITY_OPTS, index=1, key="loc",
                              help="Premium: prime area · Mid: suburban · Budget: outskirts")
 
-        st.markdown('<div class="sec-head">🏗️ Property Details</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-head">Property Details</div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         area  = c1.number_input("Carpet Area (sqft)", 250, 5000, 1000, step=50, key="area",
                                  help="Total carpet area in square feet")
@@ -1475,20 +1125,21 @@ def main():
         floor = c3.number_input("Unit Floor", 0, int(t_fl), min(5,int(t_fl)), key="fl",
                                  help="Floor number of your unit")
 
-        st.markdown('<div class="sec-head">✨ Additional Features</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-head">Additional Features</div>', unsafe_allow_html=True)
         c1, c2 = st.columns([3,2])
         furn = c1.selectbox("Furnishing Status", FURNISHING_OPTS, index=1, key="furn",
                              help="Current furnishing level of the property")
         with c2:
             st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-            park = st.toggle("🚗 Covered Parking", value=True,  key="park")
-            lift = st.toggle("🛗 Lift / Elevator",  value=True,  key="lift")
-            east = st.toggle("🧭 East Facing",      value=False, key="east")
+            park = st.toggle("Covered Parking", value=True,  key="park")
+            lift = st.toggle("Lift / Elevator",  value=True,  key="lift")
+            east = st.toggle("East Facing",      value=False, key="east")
 
         render_sidebar(city, loc, area, bhk, baths, age, t_fl, floor, furn, park, lift, east)
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        clicked = st.button("⚡ Estimate Price", key="cta")
+        clicked = st.button("INITIALIZE SEQUENCE", key="cta")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_out:
         if clicked:
@@ -1506,7 +1157,7 @@ def main():
                     "east_facing": int(east), "furnishing": furn,
                     "property_age": age,
                 }
-                with st.spinner("🔮 Calculating estimate..."):
+                with st.spinner("Calculating estimate..."):
                     time.sleep(0.35)
                     try:
                         price = run_prediction(model, inputs)
@@ -1541,7 +1192,7 @@ def main():
 
     # ── India Map ──────────────────────────────────────────────────────────────
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-    with st.expander("🗺️ City Hotspot Map — India", expanded=False):
+    with st.expander("City Hotspot Map — India", expanded=False):
         render_india_map(city, city_stats)
 
     # ── Analytics & Feature Tabs ────────────────────────────────────────────────
@@ -1553,12 +1204,12 @@ def main():
     user_id     = user.get("user_id") if user else None
 
     t1, t2, t3, t4, t5, t6 = st.tabs([
-        "📊 Dashboard",
-        "👤 Profile",
-        "🏙️ City Prices",
-        "📈 Value Drivers",
-        "🤖 Model Performance",
-        "🗺️ Market Data",
+        "Dashboard",
+        "Profile",
+        "City Prices",
+        "Value Drivers",
+        "Model Performance",
+        "Market Data",
     ])
     with t1:
         if user_id:
